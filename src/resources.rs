@@ -59,15 +59,19 @@ impl Deref for ResourcesRef {
 
 pub struct Textures {
     pub wheat_hex: Texture2D,
+    pub background: Texture2D,
 
     pub paths: Texture2D,
+    pub numbers: Texture2D,
 }
 
 impl Textures {
     async fn init() -> Self {
         Self {
             wheat_hex: texture("wheat_hex").await,
+            background: texture("background").await,
             paths: texture("path").await,
+            numbers: texture("numbers").await,
         }
     }
 }

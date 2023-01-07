@@ -1,7 +1,15 @@
+use std::{
+    collections::hash_map,
+    f32::consts::TAU,
+    hash::{Hash, Hasher},
+};
+
 use crate::{
     geom::{EdgePos, HexEdge},
+    puzzle::Puzzle,
     resources::Resources,
     util::mouse_position_pixel,
+    HEIGHT, WIDTH,
 };
 
 use super::{
@@ -9,6 +17,7 @@ use super::{
     HEX_WIDTH, PATH_MIN_DIST,
 };
 
+use ahash::AHasher;
 use hex2d::Coordinate;
 use macroquad::prelude::*;
 
@@ -16,6 +25,8 @@ impl StateGameplay {
     pub(super) fn draw_(&self) {
         let res = Resources::get();
         let level = &res.levels.levels[self.level_idx];
+
+        self.draw_background(&res);
 
         let coords = {
             let mut range = Coordinate::new(0, 0)
@@ -32,47 +43,110 @@ impl StateGameplay {
             draw_texture(res.textures.wheat_hex, px, py, WHITE);
         }
 
-        let mouse_edge = far_px_to_edge(mouse_position_pixel(), PATH_MIN_DIST);
         for (coord, center) in coords.iter().copied() {
-            let edges = self.board.get_raw_paths(coord);
-            for edge in [HexEdge::XY, HexEdge::ZY, HexEdge::ZX] {
-                let edgepos = EdgePos::new_raw(coord, edge);
-                let opacity = if edges.contains(edge) {
-                    if mouse_edge == Some(edgepos) {
-                        Some(
-                            ((get_time() as f32 * 4.0).sin() * 0.5 + 0.5) * 0.2
-                                + 0.8,
-                        )
-                    } else {
-                        Some(1.0)
-                    }
-                } else if mouse_edge == Some(edgepos) {
-                    Some(
-                        ((get_time() as f32 * 4.0).sin() * 0.5 + 0.5) * 0.4
-                            + 0.5,
-                    )
-                } else {
-                    None
-                };
+            self.draw_junctions(&level.puzzle, &res, coord, center);
+        }
 
-                if let Some(opacity) = opacity {
-                    let (sy, sw, sh, dx, dy) = match edge {
-                        HexEdge::XY => (0.0, 34.0, 4.0, -1.0, -2.0),
-                        HexEdge::ZY => (4.0, 18.0, 28.0, -1.0, -2.0),
-                        HexEdge::ZX => (32.0, 18.0, 28.0, -17.0, -2.0),
-                    };
-                    draw_texture_ex(
-                        res.textures.paths,
-                        center.x + dx,
-                        center.y + dy,
-                        Color::new(1.0, 1.0, 1.0, opacity),
-                        DrawTextureParams {
-                            source: Some(Rect::new(0.0, sy, sw, sh)),
-                            ..Default::default()
-                        },
-                    );
-                }
+        // Draw center dots on top
+        for (coord, center) in coords.iter().copied() {
+            if self.board.get_junction_count(coord) != 0 {
+                draw_texture_ex(
+                    res.textures.paths,
+                    center.x - 2.0,
+                    center.y - 2.0,
+                    WHITE,
+                    DrawTextureParams {
+                        source: Some(Rect::new(0.0, 60.0, 4.0, 4.0)),
+                        ..Default::default()
+                    },
+                )
             }
         }
     }
+
+    fn draw_background(&self, res: &Resources) {
+        for cell_x in 0..WIDTH as u32 / 16 {
+            for cell_y in 0..HEIGHT as u32 / 16 {
+                let px = cell_x as f32 * 16.0;
+                let py = cell_y as f32 * 16.0;
+
+                let sx = hash((cell_x + 1, 0x1234, self.level_idx)) % 48;
+                let sy = hash((cell_y + 1, 0x5678, self.level_idx)) % 48;
+                let flip_x = hash((cell_y + 2, 0x7604)) % 2 == 0;
+                let flip_y = hash((cell_x + 2, 0o7604)) % 2 == 0;
+                let rotation = (hash((cell_x, cell_y, self.level_idx)) % 4)
+                    as f32
+                    * 0.25
+                    * TAU;
+                draw_texture_ex(
+                    res.textures.background,
+                    px,
+                    py,
+                    WHITE,
+                    DrawTextureParams {
+                        source: Some(Rect::new(sx as _, sy as _, 16.0, 16.0)),
+                        flip_x,
+                        flip_y,
+                        rotation,
+                        ..Default::default()
+                    },
+                );
+            }
+        }
+    }
+
+    fn draw_junctions(
+        &self,
+        puzzle: &Puzzle,
+        res: &Resources,
+        coord: Coordinate,
+        center: Vec2,
+    ) {
+        let mouse_edge = far_px_to_edge(mouse_position_pixel(), PATH_MIN_DIST);
+
+        let edges = self.board.get_raw_paths(coord);
+        for edge in [HexEdge::XY, HexEdge::ZY, HexEdge::ZX] {
+            let edgepos = EdgePos::new_raw(coord, edge);
+            let mouse_matches = if let Some(mouse_edge) = mouse_edge {
+                mouse_edge == edgepos
+                    && self.board.can_twiddle_path(&puzzle, mouse_edge)
+            } else {
+                false
+            };
+            let opacity = match (edges.contains(edge), mouse_matches) {
+                (true, false) => Some(1.0),
+                (true, true) => Some(
+                    ((get_time() as f32 * 4.0).sin() * 0.5 + 0.5) * 0.2 + 0.8,
+                ),
+                (false, true) => Some(
+                    ((get_time() as f32 * 4.0).sin() * 0.5 + 0.5) * 0.4 + 0.5,
+                ),
+                (false, false) => None,
+            };
+
+            if let Some(opacity) = opacity {
+                let (sy, sw, sh, dx, dy) = match edge {
+                    HexEdge::XY => (0.0, 34.0, 4.0, -1.0, -2.0),
+                    HexEdge::ZY => (4.0, 18.0, 28.0, -1.0, -2.0),
+                    HexEdge::ZX => (32.0, 18.0, 28.0, -17.0, -2.0),
+                };
+                draw_texture_ex(
+                    res.textures.paths,
+                    center.x + dx,
+                    center.y + dy,
+                    Color::new(1.0, 1.0, 1.0, opacity),
+                    DrawTextureParams {
+                        source: Some(Rect::new(0.0, sy, sw, sh)),
+                        ..Default::default()
+                    },
+                );
+            }
+        }
+    }
+}
+
+fn hash<H: Hash>(h: H) -> u64 {
+    let mut hasher = hash_map::DefaultHasher::default();
+    h.hash(&mut hasher);
+    hasher.finish()
 }
