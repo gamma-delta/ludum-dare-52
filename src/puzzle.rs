@@ -39,7 +39,7 @@ impl Puzzle {
 #[derive(Deserialize)]
 pub struct Level {
     pub puzzle: Puzzle,
-    pub title: String,
+    // pub title: String,
 }
 
 pub struct Board {

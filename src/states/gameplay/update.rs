@@ -10,7 +10,10 @@ use super::{far_px_to_edge, px_to_edge, StateGameplay, PATH_MIN_DIST};
 impl StateGameplay {
     pub(super) fn update_(&mut self) -> Transition<GameState> {
         let res = Resources::get();
-        let level = &res.levels.levels[self.level_idx];
+        let level = &res
+            .levels
+            .get(self.level_idxs.0, self.level_idxs.1)
+            .unwrap();
 
         if is_mouse_button_down(MouseButton::Left) {
             if let Some(mouse_edge) =
@@ -32,6 +35,10 @@ impl StateGameplay {
         if is_key_pressed(KeyCode::Space) {
             let status = self.board.is_solved(&level.puzzle);
             println!("{:?}", status);
+        }
+
+        for b in [&mut self.b_check, &mut self.b_back, &mut self.b_help] {
+            b.post_update();
         }
 
         Transition::None

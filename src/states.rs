@@ -19,6 +19,6 @@ pub enum GameState {
 
 impl GameState {
     pub fn start() -> Self {
-        GameState::Gameplay(StateGameplay::new(0))
+        GameState::Gameplay(StateGameplay::new(0, 0))
     }
 }

@@ -2,11 +2,12 @@ use std::{
     collections::hash_map,
     f32::consts::TAU,
     hash::{Hash, Hasher},
+    num::NonZeroU8,
 };
 
 use crate::{
     geom::{EdgePos, HexEdge},
-    puzzle::Puzzle,
+    puzzle::{Level, Puzzle},
     resources::Resources,
     util::{hexcolor, mouse_position_pixel},
     HEIGHT, WIDTH,
@@ -17,14 +18,16 @@ use super::{
     HEX_WIDTH, PATH_MIN_DIST,
 };
 
-use ahash::AHasher;
 use hex2d::{Angle, Coordinate, Direction};
 use macroquad::prelude::*;
 
 impl StateGameplay {
     pub(super) fn draw_(&self) {
         let res = Resources::get();
-        let level = &res.levels.levels[self.level_idx];
+        let level = &res
+            .levels
+            .get(self.level_idxs.0, self.level_idxs.1)
+            .unwrap();
 
         self.draw_background(&res);
 
@@ -70,43 +73,25 @@ impl StateGameplay {
             (Direction::ZX, (8.0, -19.0), (3.0, -6.0)),
         ]) {
             // scan the flank
-            'side: for (i, markset) in marks.iter().enumerate() {
-                if markset.is_empty() {
-                    continue 'side;
-                }
-                // ... -2, -1, 0, 1, 2 ...
-                let centered_idx = i as i32 - level.puzzle.radius() as i32;
-                let side_center = Coordinate::new(0, 0)
-                    - (Coordinate::from(dir)
-                        .scale(level.puzzle.radius() as i32));
-                let offset = Coordinate::from(
-                    dir + if centered_idx > 0 {
-                        Angle::LeftBack
-                    } else {
-                        Angle::RightBack
-                    },
-                )
-                .scale(centered_idx.abs());
-                let anchor = side_center + offset;
-                let anchorpos = coord_to_px(anchor) + Vec2::from(start);
+            draw_flank_numbers(marks, level, dir, start, deltas, &res);
+        }
 
-                for (j, mark) in markset.iter().rev().enumerate() {
-                    let cx = anchorpos.x + j as f32 * deltas.0;
-                    let cy = anchorpos.y + j as f32 * deltas.1;
-
-                    let sx = mark.get() as f32 * 4.0;
-                    draw_texture_ex(
-                        res.textures.numbers,
-                        cx,
-                        cy,
-                        hexcolor(0x48cf87_ff),
-                        DrawTextureParams {
-                            source: Some(Rect::new(sx, 0.0, 4.0, 4.0)),
-                            ..Default::default()
-                        },
-                    );
-                }
-            }
+        for (idx, b) in [&self.b_check, &self.b_back, &self.b_help]
+            .iter()
+            .enumerate()
+        {
+            let sx = idx as f32 * 9.0;
+            let sy = if b.mouse_hovering() { 9.0 } else { 0.0 };
+            draw_texture_ex(
+                res.textures.buttons,
+                b.x(),
+                b.y(),
+                WHITE,
+                DrawTextureParams {
+                    source: Some(Rect::new(sx, sy, 9.0, 9.0)),
+                    ..Default::default()
+                },
+            );
         }
     }
 
@@ -116,11 +101,11 @@ impl StateGameplay {
                 let px = cell_x as f32 * 16.0;
                 let py = cell_y as f32 * 16.0;
 
-                let sx = hash((cell_x + 1, 0x1234, self.level_idx)) % 48;
-                let sy = hash((cell_y + 1, 0x5678, self.level_idx)) % 48;
+                let sx = hash((cell_x + 1, 0x1234, self.level_idxs)) % 48;
+                let sy = hash((cell_y + 1, 0x5678, self.level_idxs)) % 48;
                 let flip_x = hash((cell_y + 2, 0x7604)) % 2 == 0;
                 let flip_y = hash((cell_x + 2, 0o7604)) % 2 == 0;
-                let rotation = (hash((cell_x, cell_y, self.level_idx)) % 4)
+                let rotation = (hash((cell_x, cell_y, self.level_idxs)) % 4)
                     as f32
                     * 0.25
                     * TAU;
@@ -187,6 +172,52 @@ impl StateGameplay {
                     },
                 );
             }
+        }
+    }
+}
+
+fn draw_flank_numbers(
+    marks: &Vec<Vec<NonZeroU8>>,
+    level: &Level,
+    dir: Direction,
+    start: (f32, f32),
+    deltas: (f32, f32),
+    res: &crate::resources::ResourcesRef,
+) {
+    'side: for (i, markset) in marks.iter().enumerate() {
+        if markset.is_empty() {
+            continue 'side;
+        }
+        // ... -2, -1, 0, 1, 2 ...
+        let centered_idx = i as i32 - level.puzzle.radius() as i32;
+        let side_center = Coordinate::new(0, 0)
+            - (Coordinate::from(dir).scale(level.puzzle.radius() as i32));
+        let offset = Coordinate::from(
+            dir + if centered_idx > 0 {
+                Angle::Right
+            } else {
+                Angle::Left
+            },
+        )
+        .scale(centered_idx.abs());
+        let anchor = side_center + offset;
+        let anchorpos = coord_to_px(anchor) + Vec2::from(start);
+
+        for (j, mark) in markset.iter().rev().enumerate() {
+            let cx = anchorpos.x + j as f32 * deltas.0;
+            let cy = anchorpos.y + j as f32 * deltas.1;
+
+            let sx = mark.get() as f32 * 4.0;
+            draw_texture_ex(
+                res.textures.numbers,
+                cx,
+                cy,
+                hexcolor(0x48cf87_ff),
+                DrawTextureParams {
+                    source: Some(Rect::new(sx, 0.0, 4.0, 4.0)),
+                    ..Default::default()
+                },
+            );
         }
     }
 }

@@ -9,8 +9,10 @@ edition = "2021"
 ahash = { version = "0.8.2", features = ["serde"] }
 enum_dispatch = "0.3.9"
 enumflags2 = "0.7.5"
+eyre = "0.6.8"
 gerrymander = "0.1.0"
 hex2d = { version = "1.1.0", features = ["serde"] }
+itertools = "0.10.5"
 json5 = "0.4.1"
 macroquad = "0.3.25"
 serde = { version = "1.0.152", features = ["derive"] }

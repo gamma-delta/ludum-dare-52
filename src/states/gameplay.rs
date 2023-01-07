@@ -8,6 +8,7 @@ use hex2d::{Angle, Coordinate, Direction, IntegerSpacing};
 use macroquad::prelude::{vec2, Mat2, Mat3, Vec2};
 
 use crate::{
+    button::Button,
     geom::{EdgePos, HexEdge},
     puzzle::Board,
     HEIGHT, WIDTH,
@@ -42,18 +43,32 @@ const MAT_COORD2PX: Mat3 = Mat3::from_cols_array(&[
 
 pub struct StateGameplay {
     board: Board,
-    level_idx: usize,
+    level_idxs: (usize, usize),
 
     /// None for not painting, Some(x) for turning it on or off
     painting_path: Option<bool>,
+
+    b_check: Button,
+    b_back: Button,
+    b_help: Button,
 }
 
 impl StateGameplay {
-    pub fn new(level_idx: usize) -> Self {
+    pub fn new(level_row: usize, level_col: usize) -> Self {
+        let bx = WIDTH - 3.0 - 9.0;
+        let by = HEIGHT - 3.0 - 10.0 * 3.0;
+        let b_check = Button::new(bx, by, 9.0, 9.0, None);
+        let b_back = Button::new(bx, by + 10.0, 9.0, 9.0, None);
+        let b_help = Button::new(bx, by + 20.0, 9.0, 9.0, None);
+
         Self {
             board: Board::new(),
-            level_idx,
+            level_idxs: (level_row, level_col),
             painting_path: None,
+
+            b_check,
+            b_back,
+            b_help,
         }
     }
 }

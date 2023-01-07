@@ -8,7 +8,7 @@ use macroquad::{
     prelude::*,
 };
 
-use crate::puzzle::Level;
+use crate::puzzle::{Level, Puzzle};
 
 pub struct Resources {
     pub textures: Textures,
@@ -63,6 +63,8 @@ pub struct Textures {
 
     pub paths: Texture2D,
     pub numbers: Texture2D,
+    pub font: Texture2D,
+    pub buttons: Texture2D,
 }
 
 impl Textures {
@@ -72,6 +74,8 @@ impl Textures {
             background: texture("background").await,
             paths: texture("path").await,
             numbers: texture("numbers").await,
+            font: texture("font").await,
+            buttons: texture("buttons").await,
         }
     }
 }
@@ -85,7 +89,7 @@ impl Sounds {
 }
 
 pub struct Levels {
-    pub levels: Vec<Level>,
+    pub rows: Vec<Vec<Level>>,
 }
 
 impl Levels {
@@ -93,9 +97,13 @@ impl Levels {
         let file = load_string(&format!("{}/puzzles.json5", RESOURCES_ROOT))
             .await
             .unwrap();
-        let levels = json5::from_str(&file).unwrap();
+        let rows = json5::from_str(&file).unwrap();
 
-        Self { levels }
+        Self { rows }
+    }
+
+    pub fn get(&self, row: usize, col: usize) -> Option<&Level> {
+        self.rows.get(row)?.get(col)
     }
 }
 

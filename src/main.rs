@@ -1,10 +1,12 @@
 #![feature(array_methods)]
 #![feature(macro_metavar_expr)]
 
+mod button;
 mod geom;
 mod puzzle;
 mod resources;
 mod states;
+mod text;
 mod util;
 
 use gerrymander::StateMachine;

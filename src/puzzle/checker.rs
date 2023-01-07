@@ -26,9 +26,9 @@ impl Board {
                     - (Coordinate::from(dir).scale(puzzle.radius as i32));
                 let offset = Coordinate::from(
                     dir + if centered_idx > 0 {
-                        Angle::LeftBack
+                        Angle::Right
                     } else {
-                        Angle::RightBack
+                        Angle::Left
                     },
                 )
                 .scale(centered_idx.abs());
