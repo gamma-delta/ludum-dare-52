@@ -8,7 +8,7 @@ use crate::{
     geom::{EdgePos, HexEdge},
     puzzle::Puzzle,
     resources::Resources,
-    util::mouse_position_pixel,
+    util::{hexcolor, mouse_position_pixel},
     HEIGHT, WIDTH,
 };
 
@@ -18,7 +18,7 @@ use super::{
 };
 
 use ahash::AHasher;
-use hex2d::Coordinate;
+use hex2d::{Angle, Coordinate, Direction};
 use macroquad::prelude::*;
 
 impl StateGameplay {
@@ -60,6 +60,52 @@ impl StateGameplay {
                         ..Default::default()
                     },
                 )
+            }
+        }
+
+        // Draw edge numbers
+        for (marks, (dir, start, deltas)) in level.puzzle.marks().iter().zip([
+            (Direction::XY, (-22.0, -2.0), (-6.0, 0.0)),
+            (Direction::YZ, (8.0, 15.0), (3.0, 6.0)),
+            (Direction::ZX, (8.0, -19.0), (3.0, -6.0)),
+        ]) {
+            // scan the flank
+            'side: for (i, markset) in marks.iter().enumerate() {
+                if markset.is_empty() {
+                    continue 'side;
+                }
+                // ... -2, -1, 0, 1, 2 ...
+                let centered_idx = i as i32 - level.puzzle.radius() as i32;
+                let side_center = Coordinate::new(0, 0)
+                    - (Coordinate::from(dir)
+                        .scale(level.puzzle.radius() as i32));
+                let offset = Coordinate::from(
+                    dir + if centered_idx > 0 {
+                        Angle::LeftBack
+                    } else {
+                        Angle::RightBack
+                    },
+                )
+                .scale(centered_idx.abs());
+                let anchor = side_center + offset;
+                let anchorpos = coord_to_px(anchor) + Vec2::from(start);
+
+                for (j, mark) in markset.iter().rev().enumerate() {
+                    let cx = anchorpos.x + j as f32 * deltas.0;
+                    let cy = anchorpos.y + j as f32 * deltas.1;
+
+                    let sx = mark.get() as f32 * 4.0;
+                    draw_texture_ex(
+                        res.textures.numbers,
+                        cx,
+                        cy,
+                        hexcolor(0x48cf87_ff),
+                        DrawTextureParams {
+                            source: Some(Rect::new(sx, 0.0, 4.0, 4.0)),
+                            ..Default::default()
+                        },
+                    );
+                }
             }
         }
     }
