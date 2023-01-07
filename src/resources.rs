@@ -24,7 +24,7 @@ impl Resources {
 
         let levels = Levels::init().await;
 
-        coroutines::wait_seconds(5.0).await;
+        // coroutines::wait_seconds(5.0).await;
 
         let mut lock = THE_RESOURCES.lock().unwrap();
         *lock = Some(Resources {

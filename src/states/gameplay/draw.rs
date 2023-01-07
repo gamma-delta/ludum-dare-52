@@ -2,15 +2,11 @@ use crate::{
     geom::{EdgePos, HexEdge},
     resources::Resources,
     util::mouse_position_pixel,
-    HEIGHT, WIDTH,
 };
 
-use super::{
-    coord_to_px, px_to_edge, StateGameplay, BOARD_CENTER_X, BOARD_CENTER_Y,
-    HEX_HEIGHT, HEX_SPAN_X, HEX_SPAN_Y, HEX_WIDTH,
-};
+use super::{coord_to_px, px_to_edge, StateGameplay, HEX_HEIGHT, HEX_WIDTH};
 
-use hex2d::{Coordinate, IntegerSpacing};
+use hex2d::Coordinate;
 use macroquad::prelude::*;
 
 impl StateGameplay {
@@ -41,30 +37,34 @@ impl StateGameplay {
                 let opacity = if edges.contains(edge) {
                     if mouse_edge == edgepos {
                         Some(
-                            ((get_time() as f32).sin() * 0.5 + 0.5) * 0.2 + 0.8,
+                            ((get_time() as f32 * 4.0).sin() * 0.5 + 0.5) * 0.2
+                                + 0.8,
                         )
                     } else {
                         Some(1.0)
                     }
                 } else if mouse_edge == edgepos {
-                    Some(((get_time() as f32).sin() * 0.5 + 0.5) * 0.4 + 0.5)
+                    Some(
+                        ((get_time() as f32 * 4.0).sin() * 0.5 + 0.5) * 0.4
+                            + 0.5,
+                    )
                 } else {
                     None
                 };
 
                 if let Some(opacity) = opacity {
-                    let (sx, sw) = match edge {
-                        HexEdge::XY => (0.0, 36.0),
-                        HexEdge::ZY => (36.0, 28.0),
-                        HexEdge::ZX => (54.0, 28.0),
+                    let (sy, sw, sh, dx, dy) = match edge {
+                        HexEdge::XY => (0.0, 38.0, 4.0, -2.0, -2.0),
+                        HexEdge::ZY => (4.0, 18.0, 28.0, -2.0, -2.0),
+                        HexEdge::ZX => (32.0, 18.0, 28.0, -18.0, -2.0),
                     };
                     draw_texture_ex(
                         res.textures.paths,
-                        center.x - 1.0,
-                        center.y - 1.0,
+                        center.x + dx,
+                        center.y + dy,
                         Color::new(1.0, 1.0, 1.0, opacity),
                         DrawTextureParams {
-                            source: Some(Rect::new(sx, 0.0, sw, 28.0)),
+                            source: Some(Rect::new(0.0, sy, sw, sh)),
                             ..Default::default()
                         },
                     );

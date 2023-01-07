@@ -95,9 +95,9 @@ async fn load_and_anim(canvas: RenderTarget) {
             target: vec2(WIDTH as f32 / 2.0, HEIGHT as f32 / 2.0),
             ..Default::default()
         });
-        clear_background(WHITE);
+        clear_background(GREEN);
 
-        draw_text("Loading!", 20.0, 20.0, 16.0, WHITE);
+        draw_text("Loading!", 20.0, 20.0, 16.0, BLACK);
 
         set_default_camera();
         clear_background(BLACK);
