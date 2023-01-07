@@ -33,8 +33,13 @@ pub struct EdgePos {
 }
 
 impl EdgePos {
-    pub fn new(coord: Coordinate, edge: HexEdge) -> Self {
+    pub fn new_raw(coord: Coordinate, edge: HexEdge) -> Self {
         Self { coord, edge }
+    }
+
+    pub fn new(coord: Coordinate, dir: Direction) -> Self {
+        let (coord, dir) = canonicalize(coord, dir);
+        Self { coord, edge: dir }
     }
 
     pub fn spans(&self) -> [Coordinate; 2] {

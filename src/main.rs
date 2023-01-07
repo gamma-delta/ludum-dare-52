@@ -5,12 +5,14 @@ mod geom;
 mod puzzle;
 mod resources;
 mod states;
+mod util;
 
 use gerrymander::StateMachine;
 use resources::Resources;
 use states::{GameState, GameStateDispatch};
 
 use macroquad::prelude::{coroutines::start_coroutine, *};
+use util::wh_deficit;
 
 const WIDTH: f32 = 320.0;
 const HEIGHT: f32 = 240.0;
@@ -118,19 +120,5 @@ async fn load_and_anim(canvas: RenderTarget) {
         );
 
         next_frame().await;
-    }
-}
-
-fn wh_deficit() -> (f32, f32) {
-    if (screen_width() / screen_height()) > ASPECT_RATIO {
-        // it's too wide! put bars on the sides!
-        // the height becomes the authority on how wide to draw
-        let expected_width = screen_height() * ASPECT_RATIO;
-        (screen_width() - expected_width, 0.0f32)
-    } else {
-        // it's too tall! put bars on the ends!
-        // the width is the authority
-        let expected_height = screen_width() / ASPECT_RATIO;
-        (0.0f32, screen_height() - expected_height)
     }
 }

@@ -24,6 +24,8 @@ impl Resources {
 
         let levels = Levels::init().await;
 
+        coroutines::wait_seconds(5.0).await;
+
         let mut lock = THE_RESOURCES.lock().unwrap();
         *lock = Some(Resources {
             textures,
@@ -55,11 +57,18 @@ impl Deref for ResourcesRef {
     }
 }
 
-pub struct Textures {}
+pub struct Textures {
+    pub wheat_hex: Texture2D,
+
+    pub paths: Texture2D,
+}
 
 impl Textures {
     async fn init() -> Self {
-        Self {}
+        Self {
+            wheat_hex: texture("wheat_hex").await,
+            paths: texture("path").await,
+        }
     }
 }
 
