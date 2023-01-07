@@ -1,7 +1,9 @@
+mod checker;
+
 use std::{collections::hash_map, num::NonZeroU8};
 
 use ahash::{AHashMap, AHashSet};
-use hex2d::Coordinate;
+use hex2d::{Coordinate, Direction};
 use serde::Deserialize;
 
 use crate::geom::{EdgePos, EdgeSet};
@@ -11,7 +13,7 @@ pub struct Puzzle {
     radius: u32,
     marks: [Vec<Vec<NonZeroU8>>; 3],
     #[serde(default)]
-    water: AHashSet<Coordinate>,
+    dead_cells: AHashSet<Coordinate>,
 }
 
 impl Puzzle {
@@ -23,14 +25,14 @@ impl Puzzle {
         self.marks.each_ref()
     }
 
-    pub fn has_water(&self, coord: Coordinate) -> bool {
-        self.water.contains(&coord)
+    pub fn is_cell_dead(&self, coord: Coordinate) -> bool {
+        self.dead_cells.contains(&coord)
     }
 
     /// can the alien go over there
     pub fn is_valid(&self, coord: Coordinate) -> bool {
         coord.distance(Coordinate::new(0, 0)) <= self.radius as i32
-            && !self.water.contains(&coord)
+            && !self.dead_cells.contains(&coord)
     }
 }
 
@@ -59,6 +61,17 @@ impl Board {
     /// Get whether the path is there, missing, or invalid
     pub fn get_path(&self, edge: EdgePos) -> Option<bool> {
         Some(self.paths.get(&edge.coord)?.contains(edge.edge))
+    }
+
+    pub fn get_junction_count(&self, coord: Coordinate) -> u8 {
+        let count = Direction::all()
+            .iter()
+            .filter(|dir| {
+                let edge = EdgePos::new(coord, **dir);
+                self.get_path(edge) == Some(true)
+            })
+            .count();
+        count as u8
     }
 
     /// Return the old value of the path
@@ -92,7 +105,7 @@ impl Board {
         }
     }
 
-    pub fn get_paths(&self, coord: Coordinate) -> EdgeSet {
+    pub fn get_raw_paths(&self, coord: Coordinate) -> EdgeSet {
         self.paths.get(&coord).copied().unwrap_or_default()
     }
 }
