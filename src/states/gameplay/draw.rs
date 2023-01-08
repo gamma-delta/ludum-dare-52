@@ -9,6 +9,7 @@ use crate::{
     geom::{EdgePos, HexEdge},
     puzzle::{Level, Puzzle},
     resources::{Resources, ResourcesRef},
+    text::{draw_pixel_text, TextAlign},
     util::{hexcolor, mouse_position_pixel, patch9},
     HEIGHT, WIDTH,
 };
@@ -76,49 +77,7 @@ impl StateGameplay {
             draw_flank_numbers(marks, level, dir, start, deltas, &res);
         }
 
-        self.draw_ui(&res);
-    }
-
-    fn draw_ui(&self, res: &Resources) {
-        patch9(16.0, 8.0, HEIGHT - 48.0, 19, 4, res.textures.billboard);
-
-        for (idx, b) in [&self.b_check, &self.b_back, &self.b_help]
-            .iter()
-            .enumerate()
-        {
-            let sx = idx as f32 * 9.0;
-            let sy = if b.mouse_hovering() { 9.0 } else { 0.0 };
-            draw_texture_ex(
-                res.textures.buttons,
-                b.x(),
-                b.y(),
-                WHITE,
-                DrawTextureParams {
-                    source: Some(Rect::new(sx, sy, 9.0, 9.0)),
-                    ..Default::default()
-                },
-            );
-        }
-
-        let (alien_dy, sx) = match self.check_state {
-            CheckState::Waiting => {
-                (if self.frames % 64 < 32 { 0.0 } else { 1.0 }, 0.0)
-            }
-            CheckState::No(time) => {
-                (0.0, if time % 16 < 8 { 16.0 } else { 32.0 })
-            }
-            CheckState::Yes(_) => (0.0, 48.0),
-        };
-        draw_texture_ex(
-            res.textures.ufo,
-            3.0 + 9.0 + 3.0,
-            8.0 + alien_dy,
-            WHITE,
-            DrawTextureParams {
-                source: Some(Rect::new(sx, 0.0, 16.0, 16.0)),
-                ..Default::default()
-            },
-        );
+        self.draw_ui(&res, &level);
     }
 
     fn draw_background(&self, res: &Resources) {
@@ -199,6 +158,57 @@ impl StateGameplay {
                 );
             }
         }
+    }
+
+    fn draw_ui(&self, res: &Resources, level: &Level) {
+        patch9(16.0, 8.0, HEIGHT - 48.0, 19, 4, res.textures.billboard);
+
+        for (idx, b) in [&self.b_check, &self.b_back, &self.b_help]
+            .iter()
+            .enumerate()
+        {
+            let sx = idx as f32 * 9.0;
+            let sy = if b.mouse_hovering() { 9.0 } else { 0.0 };
+            draw_texture_ex(
+                res.textures.buttons,
+                b.x(),
+                b.y(),
+                WHITE,
+                DrawTextureParams {
+                    source: Some(Rect::new(sx, sy, 9.0, 9.0)),
+                    ..Default::default()
+                },
+            );
+        }
+
+        let (alien_dy, sx) = match self.check_state {
+            CheckState::Waiting => {
+                (if self.frames % 64 < 32 { 0.0 } else { 1.0 }, 0.0)
+            }
+            CheckState::No(time) => {
+                (0.0, if time % 16 < 8 { 16.0 } else { 32.0 })
+            }
+            CheckState::Yes(_) => (0.0, 48.0),
+        };
+        draw_texture_ex(
+            res.textures.ufo,
+            3.0 + 9.0 + 3.0,
+            8.0 + alien_dy,
+            WHITE,
+            DrawTextureParams {
+                source: Some(Rect::new(sx, 0.0, 16.0, 16.0)),
+                ..Default::default()
+            },
+        );
+
+        draw_pixel_text(
+            &level.description,
+            8.0 + 3.0,
+            HEIGHT - 48.0 + 5.0,
+            TextAlign::Left,
+            BLACK,
+            res.textures.font,
+        );
     }
 }
 
