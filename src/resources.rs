@@ -65,6 +65,9 @@ pub struct Textures {
     pub numbers: Texture2D,
     pub font: Texture2D,
     pub buttons: Texture2D,
+    pub billboard: Texture2D,
+
+    pub ufo: Texture2D,
 }
 
 impl Textures {
@@ -76,6 +79,8 @@ impl Textures {
             numbers: texture("numbers").await,
             font: texture("font").await,
             buttons: texture("buttons").await,
+            billboard: texture("billboard").await,
+            ufo: texture("ufo").await,
         }
     }
 }

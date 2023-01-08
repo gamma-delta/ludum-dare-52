@@ -11,7 +11,7 @@ impl Board {
         let Some(euler) = self.find_euler_path() else {
             return Err(FailureReason::NotSinglePass)
         };
-        println!("{:?}", euler);
+        // println!("{:?}", euler);
 
         // for each flank of the level
         for (marks, dir) in puzzle.marks.iter().zip([
@@ -38,10 +38,10 @@ impl Board {
                 )
                 .scale(centered_idx.abs());
                 let anchor = side_center + offset;
-                println!(
-                    "checking {:?} from {:?} ({})",
-                    dir, anchor, centered_idx
-                );
+                //         println!(
+                //             "checking {:?} from {:?} ({})",
+                //             dir, anchor, centered_idx
+                //         );
 
                 let mut scanner = 0;
                 let mut popcnt = 0;
@@ -49,7 +49,7 @@ impl Board {
                 'across: for j in
                     0..=(puzzle.radius * 2 - centered_idx.unsigned_abs())
                 {
-                    println!("> {j}");
+                    //             println!("> {j}");
                     let coord = anchor + Coordinate::from(dir).scale(j as i32);
                     let junction_count = self.get_junction_count(coord);
                     if junction_count == 0 {
@@ -61,20 +61,20 @@ impl Board {
 
                     if j as usize >= markset.len() {
                         // there's more junctions here than the plan called for
-                        println!(
-                            "failed at {:?} idx {},{}, ran out",
-                            dir, i, j
-                        );
+                        //                 println!(
+                        //                     "failed at {:?} idx {},{}, ran out",
+                        //                     dir, i, j
+                        //                 );
                         return Err(FailureReason::CountFailed);
                     }
 
                     let wanted = markset[scanner as usize].get();
                     if junction_count != wanted {
                         // this junction doesn't match
-                        println!(
-                            "failed at {:?} idx {},{}, wanted {} found {} (slot {})",
-                            dir, i, j, wanted, junction_count, scanner
-                        );
+                        //                 println!(
+                        //                     "failed at {:?} idx {},{}, wanted {} found {} (slot {})",
+                        //                     dir, i, j, wanted, junction_count, scanner
+                        //                 );
                         return Err(FailureReason::CountFailed);
                     }
                     // then we've found the next step in the plan
@@ -83,13 +83,13 @@ impl Board {
 
                 if markset.len() != popcnt {
                     // then we're missing a junction
-                    println!(
-                        "failed at {:?} idx {}, wanted {} junctions, found {}",
-                        dir,
-                        i,
-                        markset.len(),
-                        popcnt,
-                    );
+                    //             println!(
+                    //                 "failed at {:?} idx {}, wanted {} junctions, found {}",
+                    //                 dir,
+                    //                 i,
+                    //                 markset.len(),
+                    //                 popcnt,
+                    //             );
                     return Err(FailureReason::CountFailed);
                 }
             }
@@ -102,6 +102,9 @@ impl Board {
     /// https://github.com/gamma-delta/HexMod/blob/main/Common/src/main/java/at/petrak/hexcasting/api/spell/math/EulerPathFinder.kt
     pub fn find_euler_path(&self) -> Option<Vec<Coordinate>> {
         let mut graph = make_graph(self);
+        if graph.is_empty() {
+            return None;
+        }
 
         let odd_nodes = graph
             .iter()
@@ -123,9 +126,9 @@ impl Board {
         let mut out = Vec::new();
         // hacking a do-while loop, sorry
         while {
-            println!("at {:?}", current);
+            //     println!("at {:?}", current);
             let edges = graph.get_mut(&current).unwrap();
-            println!("edges {:06b}", *edges);
+            //     println!("edges {:06b}", *edges);
             if *edges == 0 {
                 out.push(current);
                 current = stack.pop().unwrap();

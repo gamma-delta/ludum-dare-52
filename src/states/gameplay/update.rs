@@ -5,7 +5,9 @@ use crate::{
     resources::Resources, states::GameState, util::mouse_position_pixel,
 };
 
-use super::{far_px_to_edge, px_to_edge, StateGameplay, PATH_MIN_DIST};
+use super::{
+    far_px_to_edge, px_to_edge, CheckState, StateGameplay, PATH_MIN_DIST,
+};
 
 impl StateGameplay {
     pub(super) fn update_(&mut self) -> Transition<GameState> {
@@ -32,14 +34,36 @@ impl StateGameplay {
             self.painting_path = None;
         }
 
-        if is_key_pressed(KeyCode::Space) {
+        if let CheckState::No(timer) | CheckState::Yes(timer) =
+            &mut self.check_state
+        {
+            if *timer == 0 {
+                if matches!(self.check_state, CheckState::Yes(_)) {
+                    // TODO: pop
+                } else {
+                    self.check_state = CheckState::Waiting;
+                }
+            } else {
+                *timer -= 1;
+            }
+        }
+
+        if is_key_pressed(KeyCode::Space)
+            || self.b_check.mouse_hovering()
+                && is_mouse_button_down(MouseButton::Left)
+        {
             let status = self.board.is_solved(&level.puzzle);
-            println!("{:?}", status);
+            self.check_state = match status {
+                Err(_) => CheckState::No(100),
+                Ok(()) => CheckState::Yes(120),
+            };
         }
 
         for b in [&mut self.b_check, &mut self.b_back, &mut self.b_help] {
             b.post_update();
         }
+
+        self.frames += 1;
 
         Transition::None
     }

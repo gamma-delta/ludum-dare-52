@@ -51,12 +51,15 @@ pub struct StateGameplay {
     b_check: Button,
     b_back: Button,
     b_help: Button,
+
+    frames: u64,
+    check_state: CheckState,
 }
 
 impl StateGameplay {
     pub fn new(level_row: usize, level_col: usize) -> Self {
-        let bx = WIDTH - 3.0 - 9.0;
-        let by = HEIGHT - 3.0 - 10.0 * 3.0;
+        let bx = 3.0;
+        let by = 3.0;
         let b_check = Button::new(bx, by, 9.0, 9.0, None);
         let b_back = Button::new(bx, by + 10.0, 9.0, 9.0, None);
         let b_help = Button::new(bx, by + 20.0, 9.0, 9.0, None);
@@ -69,6 +72,9 @@ impl StateGameplay {
             b_check,
             b_back,
             b_help,
+
+            frames: 0,
+            check_state: CheckState::Waiting,
         }
     }
 }
@@ -127,4 +133,11 @@ fn far_px_to_edge(px: Vec2, tolerance: f32) -> Option<EdgePos> {
     let clean_angle = ((angle / TAU) * 6.0).round() as i32;
     let dir = Direction::from_int(clean_angle + 2);
     Some(EdgePos::new(coord, dir))
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum CheckState {
+    Waiting,
+    No(u32),
+    Yes(u32),
 }

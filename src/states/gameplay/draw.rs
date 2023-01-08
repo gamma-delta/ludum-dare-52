@@ -8,14 +8,14 @@ use std::{
 use crate::{
     geom::{EdgePos, HexEdge},
     puzzle::{Level, Puzzle},
-    resources::Resources,
-    util::{hexcolor, mouse_position_pixel},
+    resources::{Resources, ResourcesRef},
+    util::{hexcolor, mouse_position_pixel, patch9},
     HEIGHT, WIDTH,
 };
 
 use super::{
-    coord_to_px, far_px_to_edge, px_to_edge, StateGameplay, HEX_HEIGHT,
-    HEX_WIDTH, PATH_MIN_DIST,
+    coord_to_px, far_px_to_edge, px_to_edge, CheckState, StateGameplay,
+    HEX_HEIGHT, HEX_WIDTH, PATH_MIN_DIST,
 };
 
 use hex2d::{Angle, Coordinate, Direction};
@@ -76,6 +76,12 @@ impl StateGameplay {
             draw_flank_numbers(marks, level, dir, start, deltas, &res);
         }
 
+        self.draw_ui(&res);
+    }
+
+    fn draw_ui(&self, res: &Resources) {
+        patch9(16.0, 8.0, HEIGHT - 48.0, 19, 4, res.textures.billboard);
+
         for (idx, b) in [&self.b_check, &self.b_back, &self.b_help]
             .iter()
             .enumerate()
@@ -93,6 +99,26 @@ impl StateGameplay {
                 },
             );
         }
+
+        let (alien_dy, sx) = match self.check_state {
+            CheckState::Waiting => {
+                (if self.frames % 64 < 32 { 0.0 } else { 1.0 }, 0.0)
+            }
+            CheckState::No(time) => {
+                (0.0, if time % 16 < 8 { 16.0 } else { 32.0 })
+            }
+            CheckState::Yes(_) => (0.0, 48.0),
+        };
+        draw_texture_ex(
+            res.textures.ufo,
+            3.0 + 9.0 + 3.0,
+            8.0 + alien_dy,
+            WHITE,
+            DrawTextureParams {
+                source: Some(Rect::new(sx, 0.0, 16.0, 16.0)),
+                ..Default::default()
+            },
+        );
     }
 
     fn draw_background(&self, res: &Resources) {
@@ -182,7 +208,7 @@ fn draw_flank_numbers(
     dir: Direction,
     start: (f32, f32),
     deltas: (f32, f32),
-    res: &crate::resources::ResourcesRef,
+    res: &ResourcesRef,
 ) {
     'side: for (i, markset) in marks.iter().enumerate() {
         if markset.is_empty() {
